@@ -8,13 +8,13 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 
 /**
  * 初始化连接时候的各个组件
- * @author liuyazhuang
+ * @author huaronghao
  *
  */
 public class MyWebSocketChannelHandler extends ChannelInitializer<SocketChannel> {
 
 	@Override
-	protected void initChannel(SocketChannel e) throws Exception {
+	protected void initChannel(SocketChannel e) {
 		e.pipeline().addLast("http-codec", new HttpServerCodec());
 		e.pipeline().addLast("aggregator", new HttpObjectAggregator(65536));
 		e.pipeline().addLast("http-chunked", new ChunkedWriteHandler());

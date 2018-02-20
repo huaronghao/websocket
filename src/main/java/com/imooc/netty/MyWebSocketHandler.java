@@ -6,6 +6,8 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.group.ChannelMatcher;
+import io.netty.channel.group.ChannelMatchers;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -17,50 +19,74 @@ import java.util.Date;
 
 /**
  * 接收/处理/响应客户端websocket请求的核心业务处理类
- * @author liuyazhuang
+ * @author huaronghao
  *
  */
 public class MyWebSocketHandler extends SimpleChannelInboundHandler<Object> {
 	
 	private WebSocketServerHandshaker handshaker;
 	private static final String WEB_SOCKET_URL = "ws://localhost:8888/websocket";
-	//客户端与服务端创建连接的时候调用
+
+    /**
+     * 客户端与服务端创建连接的时候调用
+     * @param ctx
+     * @throws Exception
+     */
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
 		NettyConfig.group.add(ctx.channel());
 		System.out.println("客户端与服务端连接开启...");
 	}
 
-	//客户端与服务端断开连接的时候调用
+    /**
+     * 客户端与服务端断开连接的时候调用
+     * @param ctx
+     * @throws Exception
+     */
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 		NettyConfig.group.remove(ctx.channel());
 		System.out.println("客户端与服务端连接关闭...");
 	}
 
-	//服务端接收客户端发送过来的数据结束之后调用
+    /**
+     * 服务端接收客户端发送过来的数据结束之后调用
+     * @param ctx
+     * @throws Exception
+     */
 	@Override
 	public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
 			ctx.flush();
 	}
 
-	//工程出现异常的时候调用
+    /**
+     * 工程出现异常的时候调用
+     * @param ctx
+     * @param cause
+     * @throws Exception
+     */
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
 		cause.printStackTrace();
 		ctx.close();
 	}
 
-	//服务端处理客户端websocket请求的核心方法
+    /**
+     * 服务端处理客户端websocket请求的核心方法
+     * @param context
+     * @param msg
+     * @throws Exception
+     */
 	@Override
 	protected void messageReceived(ChannelHandlerContext context, Object msg) throws Exception {
-		//处理客户端向服务端发起http握手请求的业务
-		if (msg instanceof FullHttpRequest) {
-			handHttpRequest(context,  (FullHttpRequest)msg);
-		}else if (msg instanceof WebSocketFrame) { //处理websocket连接业务
-			handWebsocketFrame(context, (WebSocketFrame)msg);
-		}
-	}
+        //处理客户端向服务端发起http握手请求的业务
+        if (msg instanceof FullHttpRequest) {
+            handHttpRequest(context, (FullHttpRequest)msg);
+            //处理websocket连接业务
+        }else if (msg instanceof WebSocketFrame) {
+            handWebsocketFrame(context, (WebSocketFrame)msg);
+        }
+    }
 	
 	/**
 	 * 处理客户端与服务端之前的websocket业务
@@ -91,9 +117,12 @@ public class MyWebSocketHandler extends SimpleChannelInboundHandler<Object> {
 																								+ ctx.channel().id() 
 																								+ " ===>>> " 
 																								+ request);
+		// 单独发消息
+		NettyConfig.group.writeAndFlush(tws, ChannelMatchers.is(ctx.channel()));
 		//群发，服务端向每个连接上来的客户端群发消息
-		NettyConfig.group.writeAndFlush(tws);
+		//NettyConfig.group.writeAndFlush(tws);
 	}
+
 	/**
 	 * 处理客户端向服务端发起http握手请求的业务
 	 * @param ctx
