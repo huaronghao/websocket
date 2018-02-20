@@ -1,0 +1,15 @@
+group 'com.runghall.netty'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'io.netty:netty-all:5.0.0.Alpha2'
+    testCompile 'junit:junit:4.12'
+}
